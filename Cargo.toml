@@ -18,7 +18,3 @@ rayon = "1.10.0"
 
 [profile.dev]
 opt-level = 1
-
-[profile.release]
-lto = "thin"
-codegen-units = 1
