@@ -1,4 +1,8 @@
 extern crate nalgebra as na;
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 mod camera;
 
@@ -29,7 +33,7 @@ fn main() -> Result<()> {
     );
 
     let camera_center = Point3::new(0f64, 0f64, 0f64);
-    let camera = Camera::from_image_size_and_camera(width, height, 1.0, camera_center, 90., 10);
+    let camera = Camera::from_image_size_and_camera(width, height, 1.0, camera_center, 90., 100);
 
     let r = (PI / 4.).cos();
 

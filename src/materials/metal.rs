@@ -10,6 +10,7 @@ pub struct Metal {
 }
 
 impl Metal {
+    #[allow(unused)]
     pub fn new(albedo: Vector3<f64>, fuzz: f64) -> Self {
         Metal { albedo, fuzz }
     }

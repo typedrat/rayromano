@@ -9,6 +9,7 @@ pub struct Lambertian {
 }
 
 impl Lambertian {
+    #[allow(unused)]
     pub fn new(albedo: Vector3<f64>) -> Self {
         Lambertian { albedo }
     }

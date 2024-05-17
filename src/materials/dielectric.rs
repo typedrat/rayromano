@@ -9,6 +9,7 @@ pub struct Dialectric {
 }
 
 impl Dialectric {
+    #[allow(unused)]
     pub fn new(refractive_index: f64, tint: Vector3<f64>) -> Self {
         Dialectric {
             refractive_index,

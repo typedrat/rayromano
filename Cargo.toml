@@ -11,9 +11,14 @@ derive_builder = "0.20.0"
 dyn-clone = "1.0.17"
 image = "0.25.1"
 indicatif = { version = "0.17.8", features = ["rayon"] }
+mimalloc = { version = "*", default-features = false }
 nalgebra = "0.32.5"
 rand = "0.8.5"
 rayon = "1.10.0"
 
 [profile.dev]
 opt-level = 1
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
