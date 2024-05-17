@@ -1,3 +1,4 @@
+use buildstructor::buildstructor;
 use image::{Rgb, RgbImage};
 use indicatif::ParallelProgressIterator;
 use na::{Point3, Vector3};
@@ -15,25 +16,33 @@ pub struct Camera {
     viewport_width: f64,
     viewport_height: f64,
     camera_center: Point3<f64>,
-    vertical_fov: f64,
     samples_per_pixel: usize,
-    max_depth: isize,
+    max_depth: usize,
 }
 
+#[buildstructor]
 impl Camera {
-    pub fn from_image_size_and_camera(
-        image_width: u32,
-        image_height: u32,
-        focal_length: f64,
-        camera_center: Point3<f64>,
-        vertical_fov: f64,
-        samples_per_pixel: usize,
+    #[builder]
+    pub fn new(
+        image_size: (u32, u32),
+        focal_length: Option<f64>,
+        vertical_fov: Option<f64>,
+        camera_center: Option<Point3<f64>>,
+        samples_per_pixel: Option<usize>,
+        max_depth: Option<usize>,
     ) -> Self {
+        let (image_width, image_height) = image_size;
+        // The vertical equivalent of 90 deg. FOV
+        let vertical_fov = vertical_fov.unwrap_or(60.);
         let theta = vertical_fov.to_radians();
         let h = (theta / 2.).tan();
 
+        let focal_length = focal_length.unwrap_or(1.0);
         let viewport_height = 2. * h * focal_length;
         let viewport_width = viewport_height * ((image_width as f64) / (image_height as f64));
+        let camera_center = camera_center.unwrap_or(Point3::new(0., 0., 0.));
+        let samples_per_pixel = samples_per_pixel.unwrap_or(100);
+        let max_depth = max_depth.unwrap_or(50);
         Self {
             focal_length,
             image_width,
@@ -41,12 +50,13 @@ impl Camera {
             viewport_width,
             viewport_height,
             camera_center,
-            vertical_fov,
             samples_per_pixel,
-            max_depth: 50,
+            max_depth,
         }
     }
+}
 
+impl Camera {
     fn u(&self) -> Vector3<f64> {
         Vector3::new(self.viewport_width, 0f64, 0f64)
     }
@@ -95,7 +105,7 @@ impl Camera {
         output
     }
 
-    fn ray_color(&self, world: &impl Hittable, ray: &Ray, max_depth: isize) -> Vector3<f64> {
+    fn ray_color(&self, world: &impl Hittable, ray: &Ray, max_depth: usize) -> Vector3<f64> {
         if max_depth <= 0 {
             return Vector3::new(0., 0., 0.);
         }

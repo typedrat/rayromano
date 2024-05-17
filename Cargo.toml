@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 anyhow = "1.0.83"
-derive_builder = "0.20.0"
+buildstructor = "0.5.4"
 dyn-clone = "1.0.17"
 image = "0.25.1"
 indicatif = { version = "0.17.8", features = ["rayon"] }

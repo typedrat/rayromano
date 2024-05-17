@@ -32,8 +32,10 @@ fn main() -> Result<()> {
         readable_aspect_ratio(width, height)
     );
 
-    let camera_center = Point3::new(0f64, 0f64, 0f64);
-    let camera = Camera::from_image_size_and_camera(width, height, 1.0, camera_center, 90., 100);
+    let camera = Camera::builder()
+        .image_size((width, height))
+        .samples_per_pixel(500)
+        .build();
 
     let r = (PI / 4.).cos();
 
