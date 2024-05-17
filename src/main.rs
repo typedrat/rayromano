@@ -19,7 +19,6 @@ use util::color;
 
 use anyhow::Result;
 use na::Point3;
-use std::f64::consts::PI;
 
 fn main() -> Result<()> {
     let width = 640;
@@ -37,14 +36,20 @@ fn main() -> Result<()> {
         .samples_per_pixel(500)
         .build();
 
-    let r = (PI / 4.).cos();
-
-    let material_left = Lambertian::new(color(0., 0., 1.));
-    let material_right = Lambertian::new(color(1., 0., 0.));
+    let material_ground = Lambertian::new(color(0.8, 0.8, 0.));
+    let material_center = Lambertian::new(color(0.1, 0.2, 0.5));
+    let material_left = Metal::new(color(0.8, 0.8, 0.8), 0.3);
+    let material_right = Metal::new(color(0.8, 0.6, 0.2), 1.0);
 
     let world: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere::new(Point3::new(-r, 0., -1.), r, material_left)),
-        Box::new(Sphere::new(Point3::new(r, 0., -1.), r, material_right)),
+        Box::new(Sphere::new(
+            Point3::new(0., -100.5, -1.),
+            100.,
+            material_ground,
+        )),
+        Box::new(Sphere::new(Point3::new(0., 0., -1.2), 0.5, material_center)),
+        Box::new(Sphere::new(Point3::new(-1.0, 0., -1.), 0.5, material_left)),
+        Box::new(Sphere::new(Point3::new(1.0, 0., -1.), 0.5, material_right)),
     ];
 
     let output = camera.render(world);
