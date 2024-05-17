@@ -1,66 +1,55 @@
-use gtk::prelude::*;
-use gtk::{glib, Application, ApplicationWindow, Orientation};
-use std::env;
+extern crate nalgebra as na;
 
-const APP_ID: &'static str = "at.typedr.rayromano";
+mod camera;
 
-fn main() -> glib::ExitCode {
-    tracing_subscriber::fmt().compact().init();
+use crate::camera::Camera;
+use std::f64::consts::PI;
 
-    // Turn off ugly forced GNOME window decorations.
-    env::set_var("GTK_CSD", "0");
+mod geometry;
+mod materials;
+mod util;
 
-    let app = Application::builder().application_id(APP_ID).build();
+use geometry::ray::Hittable;
+use geometry::sphere::Sphere;
+use util::color;
 
-    app.connect_activate(build_ui);
+use crate::materials::*;
+use anyhow::Result;
+use na::Point3;
 
-    app.run()
+fn main() -> Result<()> {
+    let width = 640;
+    let height = 360;
+
+    println!(
+        "Resolution = {}x{}, aspect ratio = {}",
+        width,
+        height,
+        readable_aspect_ratio(width, height)
+    );
+
+    let camera_center = Point3::new(0f64, 0f64, 0f64);
+    let camera = Camera::from_image_size_and_camera(width, height, 1.0, camera_center, 90., 10);
+
+    let r = (PI / 4.).cos();
+
+    let material_left = Lambertian::new(color(0., 0., 1.));
+    let material_right = Lambertian::new(color(1., 0., 0.));
+
+    let world: Vec<Box<dyn Hittable>> = vec![
+        Box::new(Sphere::new(Point3::new(-r, 0., -1.), r, material_left)),
+        Box::new(Sphere::new(Point3::new(r, 0., -1.), r, material_right)),
+    ];
+
+    let output = camera.render(world);
+    output.save("output.png")?;
+
+    Ok(())
 }
 
-fn build_ui(app: &Application) {
-    let vsplit = gtk::Box::builder()
-        .orientation(Orientation::Vertical)
-        .spacing(10)
-        .build();
-
-    let hsplit = gtk::Box::builder()
-        .orientation(Orientation::Horizontal)
-        .margin_top(12)
-        .margin_bottom(12)
-        .margin_start(12)
-        .margin_end(12)
-        .spacing(12)
-        .build();
-
-    let label = gtk::Label::builder().label("Resolution").build();
-    hsplit.append(&label);
-
-    let drop_down = gtk::DropDown::from_strings(&["256x256", "512x512"]);
-    drop_down.set_hexpand(true);
-    hsplit.append(&drop_down);
-
-    let button = gtk::Button::builder()
-        .label("I'm a placeholder!")
-        .margin_top(12)
-        .margin_bottom(12)
-        .margin_start(12)
-        .margin_end(12)
-        .build();
-    button.connect_clicked(|_| println!("button clicked!"));
-
-    let render_paintable = gtk::gdk::Paintable::new_empty(512, 512);
-    let render_view = gtk::Picture::for_paintable(&render_paintable);
-
-    vsplit.append(&hsplit);
-    vsplit.append(&render_view);
-    vsplit.append(&button);
-
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("rayromano")
-        .resizable(false)
-        .child(&vsplit)
-        .build();
-
-    window.present();
+fn readable_aspect_ratio(width: u32, height: u32) -> String {
+    let mut out = format!("{:.4}", (width as f32) / (height as f32));
+    let len = out.trim_end_matches('0').trim_end_matches('.').len();
+    out.truncate(len);
+    out
 }
