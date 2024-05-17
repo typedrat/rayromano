@@ -5,21 +5,21 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 mod camera;
-
 use crate::camera::Camera;
-use std::f64::consts::PI;
 
 mod geometry;
-mod materials;
-mod util;
-
 use geometry::ray::Hittable;
 use geometry::sphere::Sphere;
+
+mod materials;
+use crate::materials::*;
+
+mod util;
 use util::color;
 
-use crate::materials::*;
 use anyhow::Result;
 use na::Point3;
+use std::f64::consts::PI;
 
 fn main() -> Result<()> {
     let width = 640;

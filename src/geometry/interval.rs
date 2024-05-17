@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 #[derive(Copy, Clone, Debug)]
 pub struct Interval {
     pub min: f64,
