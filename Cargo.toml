@@ -13,8 +13,7 @@ image = "0.25.1"
 indicatif = { version = "0.17.8", features = ["rayon"] }
 mimalloc = { version = "*", default-features = false }
 nalgebra = "0.32.5"
+palette = "0.7.6"
 rand = "0.8.5"
 rayon = "1.10.0"
 
-[profile.dev]
-opt-level = 1

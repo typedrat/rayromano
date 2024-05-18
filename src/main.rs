@@ -12,17 +12,17 @@ use crate::geometry::ray::Hittable;
 use crate::geometry::sphere::Sphere;
 
 mod materials;
-use crate::materials::{Lambertian, Metal};
+use crate::materials::{Dielectric, Lambertian, Metal};
 
 mod util;
-use crate::util::color;
+use crate::util::{color, random_color};
 
 use anyhow::Result;
 use na::Point3;
 
 fn main() -> Result<()> {
-    let width = 640;
-    let height = 360;
+    let width = 1200;
+    let height = 675;
 
     println!(
         "Resolution = {}x{}, aspect ratio = {}",
@@ -34,23 +34,80 @@ fn main() -> Result<()> {
     let camera = Camera::builder()
         .image_size((width, height))
         .samples_per_pixel(500)
+        .look_from(Point3::new(13., 2., 3.))
+        .look_at(Point3::new(0., 0., 0.))
+        .vertical_fov(20.)
+        .defocus_angle(0.3)
+        .focus_dist(10.)
         .build();
 
-    let material_ground = Lambertian::new(color(0.8, 0.8, 0.));
-    let material_center = Lambertian::new(color(0.1, 0.2, 0.5));
-    let material_left = Metal::new(color(0.8, 0.8, 0.8), 0.3);
-    let material_right = Metal::new(color(0.8, 0.6, 0.2), 1.0);
+    let mut world: Vec<Box<dyn Hittable>> = Vec::new();
 
-    let world: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere::new(
-            Point3::new(0., -100.5, -1.),
-            100.,
-            material_ground,
-        )),
-        Box::new(Sphere::new(Point3::new(0., 0., -1.2), 0.5, material_center)),
-        Box::new(Sphere::new(Point3::new(-1.0, 0., -1.), 0.5, material_left)),
-        Box::new(Sphere::new(Point3::new(1.0, 0., -1.), 0.5, material_right)),
-    ];
+    let material_ground = Lambertian::new(color(0.5, 0.5, 0.5));
+    world.push(Box::new(Sphere::new(
+        Point3::new(0., -1000., 0.),
+        1000.,
+        material_ground,
+    )));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let a = f64::from(a);
+            let b = f64::from(b);
+
+            let choose_mat = rand::random::<f64>();
+            let center = Point3::new(
+                a + 0.9 * rand::random::<f64>(),
+                0.2,
+                b + 0.9 * rand::random::<f64>(),
+            );
+
+            if (center - Point3::new(4., 0.2, 0.)).magnitude() > 0.9 {
+                if choose_mat < 0.8 {
+                    let albedo = random_color();
+                    let material = Lambertian::new(albedo);
+
+                    world.push(Box::new(Sphere::new(center, 0.2, material)));
+                } else if choose_mat < 0.95 {
+                    let albedo = color(
+                        0.5 * rand::random::<f64>() + 0.5,
+                        0.5 * rand::random::<f64>() + 0.5,
+                        0.5 * rand::random::<f64>() + 0.5,
+                    );
+                    let fuzz = 0.5 * rand::random::<f64>() + 0.5;
+                    let material = Metal::new(albedo, fuzz);
+
+                    world.push(Box::new(Sphere::new(center, 0.2, material)));
+                } else {
+                    // Glass
+                    let material = Dielectric::new(1.5);
+
+                    world.push(Box::new(Sphere::new(center, 0.2, material)));
+                }
+            }
+        }
+    }
+
+    let material_1 = Dielectric::new(1.5);
+    world.push(Box::new(Sphere::new(
+        Point3::new(0., 1., 0.),
+        1.,
+        material_1,
+    )));
+
+    let material_2 = Lambertian::new(color(0.4, 0.2, 0.1));
+    world.push(Box::new(Sphere::new(
+        Point3::new(-4., 1., 0.),
+        1.,
+        material_2,
+    )));
+
+    let material_3 = Metal::new(color(0.7, 0.6, 0.5), 0.0);
+    world.push(Box::new(Sphere::new(
+        Point3::new(4., 1., 0.),
+        1.,
+        material_3,
+    )));
 
     let output = camera.render(&world);
     output.save("output.png")?;

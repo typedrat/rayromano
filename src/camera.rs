@@ -1,24 +1,32 @@
 use buildstructor::buildstructor;
 use image::{Rgb, RgbImage};
 use indicatif::ParallelProgressIterator;
-use na::{Point3, Vector3};
+use na::{Point3, Unit, Vector3};
 use rayon::prelude::*;
 
 use crate::geometry::interval::Interval;
 use crate::geometry::ray::{Hit, Hittable, Ray};
 use crate::materials::Scattered;
+use crate::util::random_in_unit_disk;
 
+#[allow(clippy::struct_field_names)]
 #[derive(Debug)]
 pub struct Camera {
-    focal_length: f64,
+    focus_dist: f64,
     image_width: u32,
     image_height: u32,
     viewport_width: f64,
     viewport_height: f64,
-    #[allow(clippy::struct_field_names)]
-    camera_center: Point3<f64>,
+    look_from: Point3<f64>,
+    defocus_angle: f64,
+    defocus_disk_u: Vector3<f64>,
+    defocus_disk_v: Vector3<f64>,
     samples_per_pixel: usize,
     max_depth: usize,
+
+    camera_u: Unit<Vector3<f64>>,
+    camera_v: Unit<Vector3<f64>>,
+    camera_w: Unit<Vector3<f64>>,
 }
 
 #[buildstructor]
@@ -26,9 +34,12 @@ impl Camera {
     #[builder]
     pub fn new(
         image_size: (u32, u32),
-        focal_length: Option<f64>,
         vertical_fov: Option<f64>,
-        camera_center: Option<Point3<f64>>,
+        look_from: Option<Point3<f64>>,
+        look_at: Option<Point3<f64>>,
+        up_vector: Option<Vector3<f64>>,
+        focus_dist: Option<f64>,
+        defocus_angle: Option<f64>,
         samples_per_pixel: Option<usize>,
         max_depth: Option<usize>,
     ) -> Self {
@@ -38,48 +49,67 @@ impl Camera {
         let theta = vertical_fov.to_radians();
         let h = (theta / 2.).tan();
 
-        let focal_length = focal_length.unwrap_or(1.0);
-        let viewport_height = 2. * h * focal_length;
+        let look_from = look_from.unwrap_or(Point3::new(0., 0., 0.));
+        let look_at = look_at.unwrap_or(Point3::new(0., 0., -1.));
+        let up_vector = up_vector.unwrap_or(Vector3::new(0., 1., 0.));
+        let focus_dist = focus_dist.unwrap_or(10.);
+        let defocus_angle = defocus_angle.unwrap_or(0.);
+        let defocus_angle = (defocus_angle / 2.).to_radians();
+
+        let camera_w = Unit::new_normalize(look_from - look_at);
+        let camera_u = Unit::new_normalize(up_vector.cross(&camera_w));
+        let camera_v = Unit::new_normalize(camera_w.cross(&camera_u));
+
+        let defocus_radius = focus_dist * f64::tan(defocus_angle);
+        let defocus_disk_u = defocus_radius * camera_u.into_inner();
+        let defocus_disk_v = defocus_radius * camera_v.into_inner();
+
+        let viewport_height = 2. * h * focus_dist;
         let viewport_width = viewport_height * (f64::from(image_width) / f64::from(image_height));
-        let camera_center = camera_center.unwrap_or(Point3::new(0., 0., 0.));
         let samples_per_pixel = samples_per_pixel.unwrap_or(100);
-        let max_depth = max_depth.unwrap_or(50);
+        let max_depth = max_depth.unwrap_or(10);
         Self {
-            focal_length,
+            focus_dist,
             image_width,
             image_height,
             viewport_width,
             viewport_height,
-            camera_center,
+            look_from,
+            defocus_angle,
+            defocus_disk_u,
+            defocus_disk_v,
             samples_per_pixel,
             max_depth,
+            camera_u,
+            camera_v,
+            camera_w,
         }
     }
 }
 
 impl Camera {
-    fn u(&self) -> Vector3<f64> {
-        Vector3::new(self.viewport_width, 0f64, 0f64)
+    fn viewport_u(&self) -> Vector3<f64> {
+        self.viewport_width * self.camera_u.into_inner()
     }
 
-    fn v(&self) -> Vector3<f64> {
-        Vector3::new(0f64, -self.viewport_height, 0f64)
+    fn viewport_v(&self) -> Vector3<f64> {
+        self.viewport_height * -self.camera_v.into_inner()
     }
 
-    fn delta_u(&self) -> Vector3<f64> {
-        self.u() / f64::from(self.image_width)
+    fn viewport_delta_u(&self) -> Vector3<f64> {
+        self.viewport_u() / f64::from(self.image_width)
     }
 
-    fn delta_v(&self) -> Vector3<f64> {
-        self.v() / f64::from(self.image_height)
+    fn viewport_delta_v(&self) -> Vector3<f64> {
+        self.viewport_v() / f64::from(self.image_height)
     }
 
     fn pixel_0_0_at(&self) -> Point3<f64> {
-        let viewport_upper_left = self.camera_center
-            - Vector3::new(0f64, 0f64, self.focal_length)
-            - self.u() / 2f64
-            - self.v() / 2f64;
-        viewport_upper_left + 0.5 * (self.delta_u() + self.delta_v())
+        let viewport_upper_left = self.look_from
+            - self.focus_dist * self.camera_w.into_inner()
+            - self.viewport_u() / 2.
+            - self.viewport_v() / 2.;
+        viewport_upper_left + 0.5 * (self.viewport_delta_u() + self.viewport_delta_v())
     }
 
     pub fn render<T: Hittable>(&self, world: &T) -> RgbImage {
@@ -136,11 +166,23 @@ impl Camera {
 
     fn get_ray(&self, x: f64, y: f64) -> Ray {
         let offset = sample_for_pixel();
+        let pixel_center = self.pixel_0_0_at()
+            + (x + offset.x) * self.viewport_delta_u()
+            + (y + offset.y) * self.viewport_delta_v();
 
-        let pixel_center =
-            self.pixel_0_0_at() + (x + offset.x) * self.delta_u() + (y + offset.y) * self.delta_v();
-        let ray_direction = pixel_center - self.camera_center;
-        Ray::new(self.camera_center, ray_direction)
+        let ray_origin = if self.defocus_angle <= 0. {
+            self.look_from
+        } else {
+            self.defocus_disk_sample()
+        };
+        let ray_direction = pixel_center - ray_origin;
+
+        Ray::new(self.look_from, ray_direction)
+    }
+
+    fn defocus_disk_sample(&self) -> Point3<f64> {
+        let p = random_in_unit_disk();
+        self.look_from + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
     }
 }
 
