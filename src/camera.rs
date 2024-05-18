@@ -15,6 +15,7 @@ pub struct Camera {
     image_height: u32,
     viewport_width: f64,
     viewport_height: f64,
+    #[allow(clippy::struct_field_names)]
     camera_center: Point3<f64>,
     samples_per_pixel: usize,
     max_depth: usize,
@@ -39,7 +40,7 @@ impl Camera {
 
         let focal_length = focal_length.unwrap_or(1.0);
         let viewport_height = 2. * h * focal_length;
-        let viewport_width = viewport_height * ((image_width as f64) / (image_height as f64));
+        let viewport_width = viewport_height * (f64::from(image_width) / f64::from(image_height));
         let camera_center = camera_center.unwrap_or(Point3::new(0., 0., 0.));
         let samples_per_pixel = samples_per_pixel.unwrap_or(100);
         let max_depth = max_depth.unwrap_or(50);
@@ -66,11 +67,11 @@ impl Camera {
     }
 
     fn delta_u(&self) -> Vector3<f64> {
-        self.u() / (self.image_width as f64)
+        self.u() / f64::from(self.image_width)
     }
 
     fn delta_v(&self) -> Vector3<f64> {
-        self.v() / (self.image_height as f64)
+        self.v() / f64::from(self.image_height)
     }
 
     fn pixel_0_0_at(&self) -> Point3<f64> {
@@ -81,23 +82,24 @@ impl Camera {
         viewport_upper_left + 0.5 * (self.delta_u() + self.delta_v())
     }
 
-    pub fn render<T: Hittable>(&self, world: T) -> RgbImage {
+    pub fn render<T: Hittable>(&self, world: &T) -> RgbImage {
         let mut output = RgbImage::new(self.image_width, self.image_height);
 
         output
             .par_enumerate_pixels_mut()
             .progress()
             .for_each(|(x_pos, y_pos, pixel)| {
-                let x = x_pos as f64;
-                let y = y_pos as f64;
+                let x = f64::from(x_pos);
+                let y = f64::from(y_pos);
 
                 let mut color_vector = Vector3::new(0., 0., 0.);
 
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(x, y);
-                    color_vector += Self::ray_color(&world, &ray, self.max_depth)
+                    color_vector += Self::ray_color(world, &ray, self.max_depth);
                 }
 
+                #[allow(clippy::cast_precision_loss)]
                 color_vector.unscale_mut(self.samples_per_pixel as f64);
                 *pixel = vector_to_color(&color_vector);
             });
@@ -153,6 +155,7 @@ fn vector_to_color(vec: &Vector3<f64>) -> Rgb<u8> {
     let g = vec.y.powf(1. / 2.2);
     let b = vec.z.powf(1. / 2.2);
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     Rgb([
         (256. * valid_intensity.clamp(r)) as u8,
         (256. * valid_intensity.clamp(g)) as u8,

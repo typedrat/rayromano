@@ -19,7 +19,7 @@ impl Material for Lambertian {
     fn scatter(&self, _ray: &Ray, Hit { point, normal, .. }: &Hit) -> Option<Scattered> {
         let mut scatter_direction = normal.into_inner() + random_unit_vector().into_inner();
         if scatter_direction.magnitude_squared() < 1e-8 {
-            scatter_direction = normal.into_inner()
+            scatter_direction = normal.into_inner();
         }
 
         let scatter_ray = Ray::new(*point, scatter_direction);

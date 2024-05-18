@@ -8,14 +8,14 @@ mod camera;
 use crate::camera::Camera;
 
 mod geometry;
-use geometry::ray::Hittable;
-use geometry::sphere::Sphere;
+use crate::geometry::ray::Hittable;
+use crate::geometry::sphere::Sphere;
 
 mod materials;
-use crate::materials::*;
+use crate::materials::{Lambertian, Metal};
 
 mod util;
-use util::color;
+use crate::util::color;
 
 use anyhow::Result;
 use na::Point3;
@@ -52,14 +52,14 @@ fn main() -> Result<()> {
         Box::new(Sphere::new(Point3::new(1.0, 0., -1.), 0.5, material_right)),
     ];
 
-    let output = camera.render(world);
+    let output = camera.render(&world);
     output.save("output.png")?;
 
     Ok(())
 }
 
 fn readable_aspect_ratio(width: u32, height: u32) -> String {
-    let mut out = format!("{:.4}", (width as f32) / (height as f32));
+    let mut out = format!("{:.4}", f64::from(width) / f64::from(height));
     let len = out.trim_end_matches('0').trim_end_matches('.').len();
     out.truncate(len);
     out
