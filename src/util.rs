@@ -13,6 +13,7 @@ pub fn random_unit_vector() -> UnitVector3<f64> {
     ))
 }
 
+#[allow(dead_code)]
 pub fn random_in_unit_disk() -> Vector3<f64> {
     let mut rng = thread_rng();
 

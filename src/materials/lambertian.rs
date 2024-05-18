@@ -22,7 +22,7 @@ impl Material for Lambertian {
             scatter_direction = normal.into_inner()
         }
 
-        let scatter_ray = Ray::new(point.clone(), scatter_direction);
+        let scatter_ray = Ray::new(*point, scatter_direction);
 
         Some(Scattered {
             attenuation: self.albedo,

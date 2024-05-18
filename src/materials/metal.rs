@@ -21,7 +21,7 @@ impl Material for Metal {
         let reflected = reflect_vector(ray.direction(), normal);
         let fuzzy_reflected =
             reflected.normalize() + (self.fuzz * random_unit_vector().into_inner());
-        let scatter_ray = Ray::new(point.clone(), fuzzy_reflected);
+        let scatter_ray = Ray::new(*point, fuzzy_reflected);
 
         if fuzzy_reflected.dot(normal) > 0. {
             Some(Scattered {

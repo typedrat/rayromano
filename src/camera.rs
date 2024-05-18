@@ -95,7 +95,7 @@ impl Camera {
 
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(x, y);
-                    color_vector += self.ray_color(&world, &ray, self.max_depth)
+                    color_vector += Self::ray_color(&world, &ray, self.max_depth)
                 }
 
                 color_vector.unscale_mut(self.samples_per_pixel as f64);
@@ -105,8 +105,8 @@ impl Camera {
         output
     }
 
-    fn ray_color(&self, world: &impl Hittable, ray: &Ray, max_depth: usize) -> Vector3<f64> {
-        if max_depth <= 0 {
+    fn ray_color(world: &impl Hittable, ray: &Ray, max_depth: usize) -> Vector3<f64> {
+        if max_depth == 0 {
             return Vector3::new(0., 0., 0.);
         }
 
@@ -117,9 +117,9 @@ impl Camera {
             return if let Some(Scattered {
                 attenuation,
                 scatter_ray,
-            }) = material.scatter(ray, &hit)
+            }) = material.scatter(ray, hit)
             {
-                let color: Vector3<f64> = self.ray_color(world, &scatter_ray, max_depth - 1);
+                let color: Vector3<f64> = Self::ray_color(world, &scatter_ray, max_depth - 1);
                 attenuation.component_mul(&color)
             } else {
                 Vector3::new(0., 0., 0.)
