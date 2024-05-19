@@ -37,8 +37,8 @@ fn main() -> Result<()> {
         .look_from(Point3::new(13., 2., 3.))
         .look_at(Point3::new(0., 0., 0.))
         .vertical_fov(20.)
-        .defocus_angle(0.3)
-        .focus_dist(10.)
+        .defocus_angle(0.6)
+        .focus_dist(10)
         .build();
 
     let mut world: Vec<Box<dyn Hittable>> = Vec::new();
