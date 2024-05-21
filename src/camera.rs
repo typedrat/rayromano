@@ -177,7 +177,7 @@ impl Camera {
         };
         let ray_direction = pixel_center - ray_origin;
 
-        Ray::new(self.look_from, ray_direction)
+        Ray::new(ray_origin, ray_direction)
     }
 
     fn defocus_disk_sample(&self) -> Point3<f64> {
