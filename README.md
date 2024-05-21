@@ -6,6 +6,16 @@ This is another simple raytracer written in Rust, mostly done to well... get the
 
 I'm not a graphics programming expert, to be sure, so you probably shouldn't copy this too closely.
 
+## Pretty Pictures
+
+That's why we're all here, right?
+
+### [_In One Weekend_](/typedrat/rayromano/tree/in-one-weekend)
+
+![The example image from the book.](https://files.catbox.moe/j8od0u.png)
+
+I didn't spend too long playing with the raytracer here beyond just debugging, since I wanted to focus on progressing further in the series.
+
 ## License
 
 Licensed under either of
