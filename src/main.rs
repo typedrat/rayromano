@@ -33,7 +33,7 @@ fn main() -> Result<()> {
 
     let camera = Camera::builder()
         .image_size((width, height))
-        .samples_per_pixel(500)
+        .samples_per_pixel(10)
         .look_from(Point3::new(13., 2., 3.))
         .look_at(Point3::new(0., 0., 0.))
         .vertical_fov(20.)
