@@ -4,7 +4,7 @@ Yes, this is a stupid pun name, but I couldn't think of anything better.
 
 This is another simple raytracer written in Rust, mostly done to well... get the rust off, and to get some more practice writing performant Rust.
 
-I'm not a graphics programming expert, to be sure, so you probably shouldn't copy this too closely.
+I'm not a graphics programming expert, to be sure, so you probably shouldn't copy this too closely. I'm mostly following the [`raytracing.github.io` online books](https://raytracing.github.io/), at least for the core raytracing engine.
 
 ## Pretty Pictures
 
