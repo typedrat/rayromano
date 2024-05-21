@@ -4,8 +4,10 @@ use rand::Rng;
 use std::f64::consts::TAU;
 
 pub fn random_unit_vector() -> UnitVector3<f64> {
-    let u: f64 = 2. * rand::random::<f64>() - 1.;
-    let phi: f64 = TAU * rand::random::<f64>();
+    let mut rng = rand::thread_rng();
+
+    let u: f64 = 2. * rng.gen::<f64>() - 1.;
+    let phi: f64 = TAU * rng.gen::<f64>();
 
     Unit::new_normalize(Vector3::new(
         phi.cos() * (1. - u.powf(2.)).powf(0.5),
@@ -18,13 +20,10 @@ pub fn random_unit_vector() -> UnitVector3<f64> {
 pub fn random_in_unit_disk() -> Vector3<f64> {
     let mut rng = rand::thread_rng();
 
-    loop {
-        let vec = Vector3::new(rng.gen_range(-1. ..1.), rng.gen_range(-1. ..1.), 0.);
+    let theta = rng.gen_range(0. .. TAU);
+    let r = rng.gen_range(0f64 ..= 1f64).sqrt();
 
-        if vec.magnitude_squared() < 1. {
-            return vec;
-        }
-    }
+    Vector3::new(r * theta.cos(), r * theta.sin(), 0.)
 }
 
 pub fn reflect_vector(v: &Vector3<f64>, n: &Vector3<f64>) -> Vector3<f64> {
@@ -38,8 +37,8 @@ pub fn color(r: f64, g: f64, b: f64) -> Vector3<f64> {
 pub fn random_color() -> Vector3<f64> {
     let mut rng = rand::thread_rng();
     let hue = rng.gen_range(0.0..360.0);
-    let saturation = rng.gen_range(0.0..=1.0);
-    let lightness = rng.gen_range(0.0..=1.0);
+    let saturation = rng.gen_range(0.5..=1.0);
+    let lightness = rng.gen_range(0.2..=0.8);
 
     let hsl: Hsl<Srgb, f64> = Hsl::new(hue, saturation, lightness);
     let Rgb {
