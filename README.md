@@ -10,7 +10,7 @@ I'm not a graphics programming expert, to be sure, so you probably shouldn't cop
 
 That's why we're all here, right?
 
-### [_In One Weekend_](/typedrat/rayromano/tree/in-one-weekend)
+### [_In One Weekend_](https://github.com/typedrat/rayromano/tree/in-one-weekend)
 
 ![The example image from the book.](https://files.catbox.moe/j8od0u.png)
 
