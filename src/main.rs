@@ -1,4 +1,6 @@
 extern crate nalgebra as na;
+
+use std::f64::consts::TAU;
 use mimalloc::MiMalloc;
 
 #[global_allocator]
@@ -19,6 +21,9 @@ use crate::util::{color, random_color};
 
 use anyhow::Result;
 use na::Point3;
+use std::fs;
+use std::path::{Path, PathBuf};
+use indicatif::ProgressIterator;
 
 fn main() -> Result<()> {
     let width = 1200;
@@ -30,16 +35,6 @@ fn main() -> Result<()> {
         height,
         readable_aspect_ratio(width, height)
     );
-
-    let camera = Camera::builder()
-        .image_size((width, height))
-        .samples_per_pixel(10)
-        .look_from(Point3::new(13., 2., 3.))
-        .look_at(Point3::new(0., 0., 0.))
-        .vertical_fov(20.)
-        .defocus_angle(0.6)
-        .focus_dist(10)
-        .build();
 
     let mut world: Vec<Box<dyn Hittable>> = Vec::new();
 
@@ -109,8 +104,35 @@ fn main() -> Result<()> {
         material_3,
     )));
 
-    let output = camera.render(&world);
-    output.save("output.png")?;
+    let output_dir = Path::new("./output");
+    fs::create_dir_all(output_dir)?;
+
+    let num_frames: u16 = 30 * 10;
+    let radius = 178f64.sqrt();
+    let angular_freq = TAU / f64::from(num_frames);
+    let phase_offset = (3./178f64.sqrt()).asin();
+
+    for frame in (0u16 .. num_frames).progress() {
+        let mut output_file = PathBuf::from(output_dir);
+        output_file.push(format!("frame_{}.png", frame + 1));
+
+        let t = angular_freq * f64::from(frame);
+        let x = radius * (t + phase_offset).cos();
+        let z = radius * (t + phase_offset).sin();
+
+        let camera = Camera::builder()
+            .image_size((width, height))
+            .samples_per_pixel(10)
+            .look_from(Point3::new(x, 2., z))
+            .look_at(Point3::new(0., 0., 0.))
+            .vertical_fov(20.)
+            .defocus_angle(0.6)
+            .focus_dist(10)
+            .build();
+
+        let output = camera.render(&world);
+        output.save(output_file)?;
+    }
 
     Ok(())
 }
